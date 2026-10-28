@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="build" content="b7">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="針中野勤務表">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF">
+<title>針中野勤務表</title>
+<link rel="icon" href="favicon.png?v=7" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=7">
+<link rel="manifest" href="manifest.webmanifest">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<style id="pstyle">
+/* Layout: iPhone（LINE内ブラウザ）前提。固定ヘッダー→自分の次の勤務→月カレンダー（タップで下からシート）。 */
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --muted:#E9ECE6; --line:#DADFD5;
+  --ink:#1B2622; --ink-soft:#51605A; --ink-faint:#8A938D;
+  --accent:#2F6F62; --accent-deep:#1F4D43; --accent-soft:#E0EDE7; --on-accent:#FFFFFF;
+  --sat:#2F6FB5; --sun:#C2453A; --dir:#2563EB; --vice:#E0559A; --scrim:rgba(18,26,22,.42);
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1412; --surface:#1A211E; --muted:#222B27; --line:#2F3A35;
+  --ink:#E6EDE9; --ink-soft:#A9B4AE; --ink-faint:#74807A;
+  --accent:#5FB3A0; --accent-deep:#93D6C6; --accent-soft:#1D3530; --on-accent:#0D1714;
+  --sat:#6EA2E0; --sun:#E5776C; --dir:#5B8DEF; --vice:#F07AB4; --scrim:rgba(0,0,0,.6); color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#1A211E; --muted:#222B27; --line:#2F3A35;
+  --ink:#E6EDE9; --ink-soft:#A9B4AE; --ink-faint:#74807A;
+  --accent:#5FB3A0; --accent-deep:#93D6C6; --accent-soft:#1D3530; --on-accent:#0D1714;
+  --sat:#6EA2E0; --sun:#E5776C; --dir:#5B8DEF; --vice:#F07AB4; --scrim:rgba(0,0,0,.6); color-scheme:dark; }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button{font-family:inherit;color:inherit;touch-action:manipulation}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+header .wrap{padding-block:10px 8px;display:flex;flex-direction:column;gap:8px}
+.r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+h1{margin:0;font-size:17px;font-weight:800;color:var(--accent-deep);letter-spacing:.02em}
+.keisho{font-size:10.5px;font-weight:500;color:var(--ink-faint);margin-left:6px;letter-spacing:0}
+.upd{font-size:11px;color:var(--ink-faint)}
+.r2{display:flex;align-items:center;gap:6px}
+.mbtn{width:44px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:22px;line-height:1;cursor:pointer}
+.mtitle{flex:1;text-align:center;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.today-btn{height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--accent);background:transparent;color:var(--accent-deep);font-size:14px;font-weight:700;cursor:pointer}
+.seg{display:flex;background:var(--muted);border-radius:10px;padding:2px}
+.seg button{border:none;background:transparent;padding:6px 10px;font-size:13px;border-radius:8px;cursor:pointer;color:var(--ink-soft)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.who{flex-shrink:0;height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:var(--surface);font-size:14px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--ink-soft)}
+.who[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.who .dot{width:9px;height:9px;border-radius:9px}
+main.wrap{padding-block:10px 28px;display:flex;flex-direction:column;gap:10px}
+.staffbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.staffbar .seg button{font-size:13px;padding:0 10px}
+.staffbar .today-btn{height:34px;display:inline-flex;align-items:center;text-decoration:none;flex:none}
+.short-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.short-card .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.short-card .tt{font-size:14px;font-weight:800}
+.short-card .sub{font-size:11.5px;color:var(--ink-faint);margin-top:2px}
+.short-card ul{list-style:none;margin:0;padding:0;font-size:14.5px;line-height:1.75}
+.short-card li b{display:inline-block;min-width:6.6em;font-weight:700}
+.short-card .ok{font-size:14px;color:var(--ink-soft)}
+.mine-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.mine-card .lbl{font-size:12px;color:var(--ink-faint)}
+.mine-card .next{font-size:18px;font-weight:800}
+.mine-card .sub{font-size:13px;color:var(--ink-soft)}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:12.5px;color:var(--ink-soft);padding:0 2px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sd{width:8px;height:8px;border-radius:8px;display:inline-block;flex-shrink:0}
+.sd.director{background:var(--dir)} .sd.vice{background:var(--vice)}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;touch-action:pan-y}
+.wd{text-align:center;font-size:12px;font-weight:700;color:var(--ink-soft);padding:2px 0 4px}
+.wd.sun{color:var(--sun)} .wd.sat{color:var(--sat)}
+.cell{min-width:0;min-height:92px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:3px 2px 4px;display:flex;flex-direction:column;align-items:stretch;gap:2px;text-align:left;font:inherit;cursor:pointer}
+.cell.blank{visibility:hidden}
+.cell.closed{background:var(--muted);border-color:transparent}
+.cell.past{opacity:.5}
+.cell.mine{background:var(--accent-soft);border-color:var(--accent)}
+.cell.sel{box-shadow:0 0 0 2px var(--accent)}
+.dn{font-size:13px;font-weight:700;min-width:22px;height:22px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;font-variant-numeric:tabular-nums}
+.dn.sun{color:var(--sun)} .dn.sat{color:var(--sat)}
+.cell.today .dn{background:var(--accent);color:var(--on-accent)}
+.hol{font-size:9px;color:var(--sun);line-height:1.2;padding-left:2px;word-break:break-all}
+.ln{display:flex;flex-wrap:wrap;align-items:center;gap:2px 3px;min-width:0}
+.ln i{font-style:normal;font-size:10px;color:var(--ink-faint);width:11px;text-align:center;flex-shrink:0}
+.ln .dots{display:inline-flex;gap:2px}
+.nm{color:#fff;font-weight:700;border-radius:5px;white-space:nowrap}
+.cell .nm{font-size:11.5px;line-height:1.35;padding:1px 2px;max-width:100%;overflow:hidden;text-align:center;display:block}
+.nm.dim{opacity:.22}
+.bands{display:flex;flex-direction:column;gap:2px;margin-top:1px}
+.band{display:flex;align-items:center;gap:2px;min-height:22px;border-radius:5px;padding:1px 1px 1px 2px}
+.band.am,.band.pm{background:var(--bg)}
+.band.op{min-height:10px;padding:0 1px;justify-content:flex-end}
+.band.op .who-n{display:none}
+.who-n{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.vdots{display:flex;flex-direction:column;gap:2px;flex-shrink:0;width:7px;align-items:center}
+.band.op .vdots{flex-direction:row;width:auto;gap:2px}
+.vdots .sd{width:7px;height:7px}
+.cell.closed .bands{display:none}
+.lg-rows{color:var(--ink-faint)}
+.lg-rows b{color:var(--ink-soft);font-weight:700}
+.foot{font-size:12px;color:var(--ink-faint);text-align:center;line-height:1.6}
+/* list */
+.day{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;cursor:pointer;text-align:left;font:inherit;width:100%}
+.day.today{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.day.past{opacity:.5}
+.day .n{font-size:22px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.day .w{font-size:12px;color:var(--ink-soft)}
+.day .w.sat{color:var(--sat)}
+.rows{display:flex;flex-direction:column;gap:5px;min-width:0}
+.row{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.row .k{font-size:12.5px;color:var(--ink-soft);width:44px;flex-shrink:0}
+.row .nm{font-size:14px;padding:2px 9px;border-radius:7px}
+.row .none{color:var(--ink-faint);font-size:14px}
+.row .dots{display:inline-flex;gap:4px;margin-left:auto}
+.row .dots .sd{width:10px;height:10px;border-radius:10px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--ink-faint)}
+/* sheet */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18);
+  padding:8px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));max-height:80vh;overflow-y:auto;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.sh-head b{font-size:20px}
+.sh-nav{display:flex;gap:6px}
+.sh-nav button{width:40px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:18px;cursor:pointer}
+.blk{border-top:1px solid var(--line);padding:11px 0;display:flex;flex-direction:column;gap:7px}
+.blk:first-of-type{border-top:none;padding-top:0}
+.blk .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.blk .t b{font-size:16px}
+.blk .t span{font-size:13.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.ppl{display:flex;flex-wrap:wrap;gap:6px}
+.ppl .nm{font-size:15px;padding:4px 11px;border-radius:8px}
+.tag{font-size:13px;padding:3px 10px;border-radius:8px;border:1.5px solid;display:inline-flex;align-items:center;gap:5px;font-weight:700}
+.tag.director{border-color:var(--dir);color:var(--dir)} .tag.vice{border-color:var(--vice);color:var(--vice)}
+.none{color:var(--ink-faint)}
+.closebar{margin-top:6px;width:100%;height:46px;border-radius:12px;border:none;background:var(--muted);font-size:16px;font-weight:700;cursor:pointer}
+/* 狭い画面：カレンダーの1行（区分・名前・点）を折り返さず1行に収める */
+@media (max-width:559px){
+.grid{gap:2px}
+.cell{padding:3px 1px 4px}
+.ln{flex-wrap:nowrap;gap:1px;position:relative;padding-right:6px;min-height:17px}
+.ln i{width:9px;font-size:9px}
+.ln .dots{position:absolute;right:0;top:50%;transform:translateY(-50%);flex-direction:column;gap:1px}
+.ln .dots .sd{width:5px;height:5px}
+}
+.nm.hid{background:transparent!important;color:var(--c)!important;outline:1.5px dashed var(--c);outline-offset:-1.5px}
+.ppl .nm.hid,.row .nm.hid{outline-width:2px;outline-offset:-2px}
+.role-bn{color:var(--ink-faint);font-size:11px;line-height:1.5;text-align:center;padding:0 8px}
+.role-bn b{font-weight:600;color:var(--ink-soft)}
+.role-bn .nm{font-size:10px!important}
+.cell .nm.sup{font-size:9.5px;letter-spacing:-.08em;padding:1px 0;font-weight:700}
+</style>
+
+<div id="root"></div>
+<script type="application/json" id="pdata">{"app": "doctor-shift-public", "doctors": [{"id": "f4dxb3a2mtlex472", "name": "湯川　圭", "color": "#AD6A32"}, {"id": "75n3xevsmtleyhep", "name": "西村　和敏", "color": "#3D5A80"}, {"id": "caq1w4tkmtlez1wx", "name": "康　彩", "color": "#7A5566"}, {"id": "r722e231mtlezmda", "name": "清水　裕介", "color": "#5E6B36"}, {"id": "64v82dbkmtlf0ci2", "name": "原　佳乃子(門口)", "color": "#7C5A93"}, {"id": "scs8mivsmtlf0xo5", "name": "上角　祐人", "color": "#3E7C7C"}, {"id": "mfyly1qmmtlfbbnp", "name": "水野　里佳", "color": "#8C5A3E"}, {"id": "84vneaq1mtlfbpjh", "name": "清水　奈美", "color": "#2F6F62"}, {"id": "yagita26nov01", "name": "八木田", "color": "#4F6D8F"}], "shifts": [["2026-09-03", "PM", "_support"], ["2026-09-07", "PM", "75n3xevsmtleyhep"], ["2026-09-08", "AM", "f4dxb3a2mtlex472"], ["2026-09-08", "TUE_EVE", "r722e231mtlezmda"], ["2026-09-10", "PM", "_support"], ["2026-09-12", "AM", "scs8mivsmtlf0xo5"], ["2026-09-12", "PM", "64v82dbkmtlf0ci2"], ["2026-09-14", "PM", "75n3xevsmtleyhep"], ["2026-09-15", "AM", "f4dxb3a2mtlex472"], ["2026-09-15", "TUE_EVE", "r722e231mtlezmda"], ["2026-09-17", "PM", "_support"], ["2026-09-19", "AM", "75n3xevsmtleyhep"], ["2026-09-19", "PM", "caq1w4tkmtlez1wx"], ["2026-09-24", "PM", "_support"], ["2026-09-25", "PM", "mfyly1qmmtlfbbnp"], ["2026-09-26", "AM", "75n3xevsmtleyhep"], ["2026-09-26", "PM", "caq1w4tkmtlez1wx"], ["2026-09-28", "PM", "75n3xevsmtleyhep"], ["2026-09-29", "AM", "f4dxb3a2mtlex472"], ["2026-09-29", "PM", "_support"], ["2026-10-01", "PM", "_support"], ["2026-10-02", "PM", "75n3xevsmtleyhep"], ["2026-10-03", "AM", "75n3xevsmtleyhep"], ["2026-10-05", "PM", "75n3xevsmtleyhep"], ["2026-10-06", "AM", "f4dxb3a2mtlex472"], ["2026-10-06", "PM", "_support"], ["2026-10-08", "PM", "_support"], ["2026-10-13", "AM", "f4dxb3a2mtlex472"], ["2026-10-15", "PM", "_support"], ["2026-10-17", "AM", "caq1w4tkmtlez1wx"], ["2026-10-17", "PM", "caq1w4tkmtlez1wx"], ["2026-10-20", "AM", "f4dxb3a2mtlex472"], ["2026-10-20", "PM", "_support"], ["2026-10-22", "PM", "_support"], ["2026-10-24", "AM", "75n3xevsmtleyhep"], ["2026-10-24", "PM", "scs8mivsmtlf0xo5"], ["2026-10-27", "AM", "f4dxb3a2mtlex472"], ["2026-10-27", "PM", "_support"], ["2026-10-29", "PM", "_support"], ["2026-10-31", "AM", "75n3xevsmtleyhep"], ["2026-11-02", "PM", "84vneaq1mtlfbpjh"], ["2026-11-05", "PM", "_support"], ["2026-11-07", "AM", "yagita26nov01"], ["2026-11-10", "AM", "f4dxb3a2mtlex472"], ["2026-11-10", "PM", "_support"], ["2026-11-12", "PM", "_support"], ["2026-11-17", "AM", "f4dxb3a2mtlex472"], ["2026-11-17", "PM", "_support"], ["2026-11-19", "PM", "_support"], ["2026-11-21", "AM", "75n3xevsmtleyhep"], ["2026-11-26", "PM", "_support"], ["2026-11-28", "AM", "75n3xevsmtleyhep"], ["2026-11-28", "PM", "scs8mivsmtlf0xo5"], ["2026-12-01", "AM", "f4dxb3a2mtlex472"], ["2026-12-01", "PM", "_support"], ["2026-12-03", "PM", "_support"], ["2026-12-08", "AM", "f4dxb3a2mtlex472"], ["2026-12-08", "PM", "_support"], ["2026-12-10", "PM", "_support"], ["2026-12-15", "AM", "f4dxb3a2mtlex472"], ["2026-12-15", "PM", "_support"], ["2026-12-17", "PM", "_support"], ["2026-12-22", "AM", "f4dxb3a2mtlex472"], ["2026-12-25", "PM", "_support"], ["2026-12-26", "PM", "_support"], ["2026-12-28", "PM", "_support"], ["2026-12-29", "AM", "f4dxb3a2mtlex472"], ["2026-12-29", "PM", "_support"], ["2027-01-05", "AM", "f4dxb3a2mtlex472"], ["2027-01-05", "PM", "_support"], ["2027-01-07", "PM", "_support"], ["2027-01-12", "AM", "f4dxb3a2mtlex472"], ["2027-01-14", "PM", "_support"], ["2027-01-19", "AM", "f4dxb3a2mtlex472"], ["2027-01-21", "PM", "_support"], ["2027-01-26", "AM", "f4dxb3a2mtlex472"], ["2027-01-28", "PM", "_support"]], "absences": [["2026-11-24", "viceExtra", "AM"]], "closed": [["2026-12-30", "年末年始休診"], ["2026-12-31", "年末年始休診"], ["2027-01-01", "年末年始休診"], ["2027-01-02", "年末年始休診"], ["2027-01-03", "年末年始休診"], ["2027-01-04", "年末年始休診"]], "secret": [{"s": "AaxzOkES71bW7AXX7wgW8Q==", "i": "BkXbVTjB7jAJnNSk", "c": "zX/hODtx0DMhP/O/uiTgB0zsxeHC1mC834Blzu1j8pUnPxETa9AsNpPr8X33hzc4EcETkrk1wTUUrZBa0cS2zQ2roaoLwMejCjRzy9utqrdPUehlinfNlLZi+aJOB4kMnXX6S5yolzCvoHdgHEz4yZo4rgoVKvvQcZPlbD2Ynwgmlx1PI78VdhJKoWJhvGoJfQgKePMxJNqP90+GzKA7RZAYdf1Mui+GGxqHP8JVvMxSK4vP4zdxVGk8O6wTBtM3pEXCmwSZked0E/7lx7KVsqebv35mNGWVNuLPcCqWboICzXUJR/bX87BUX5koBEZb1Csb8Z2E1LJLddpNPinOEQMMmNj3YCa4/77Dp3skBiOqzONMjOhEl78DAOiJcyEAjlREL5NNIPLoWFDVbqxo+tmbjpkdjMCWSAmO4hb/sGFY9RQxGow4dgEvCOKfw/7WREGUALPITXrUh+kt9RVyFP1j92LRmSkYTMpG2JCVu1fCKhLHOcHBNcwC6Sz2BfySUkFFyqaDFs3qUpEb0Xk4DOLALfJY0qZDi+cETPW4mDHr3/xTrK6519H0CgbuApl+CmwwrkJCKGJd8KcR8H9YSa2JdZXBRcLf4Tl2V4VyDxyCNh742y6YBgIagliGCgL5lDjXwqz9OKm1NZ4uWlgntI3XX5OKtn9IiIk8vQ9ynF8DzvntIKGX6b6G7gwF9j2sXTr+0xTC/qW7Ecb+TswWWs4nTiTwv29d9oCXU+pKx9aOsE9sp9KVSHpeotdp7BGZlYSWmHj3pUHOgH87Zb+E+VWmeyeB9JRkMMD6OzoMTnJzLxR3n2hMVm7jZynG+c23DdIbagM43DqdoxvApw0bF8vwOYur7VpY9q/9TKcOMsiBfvXwVWAS62pQ9qdMcrIgSyHdUUhYGr/94QVhit/AtY5ECWtQqygvkjTtgx31E6C/3AaFG9vpGKj/AzIpfQka68qY3g3nPlKu3gUwemxF2X3km5jW1eHKFwIBYCDwjnv0aAFq3mspFXoJ6kmSOjTrVRtgvHiHO8HT8a0oNuwu59ewvs8r9fX7KN0j7qqcDSmT6LbG40mMXmOSRqNdAyFR7Gy45prwJF6D4Dx/JIOIZnPaGTyJWk40CXREGvp7XzC76Uwls1B7QeOU6/EMFZgs4WhFIuDN2kTlRPMdXvTo81rN2G5SAnZXwWwHwrxb3PSqp3WWpq4tYKbTbanBg2M6kYLcMsGH7hAtlOX6xNWK2NLJz5WhPQFjLfVFsP5peuCpmNxIjHjYYS1xxZf+EbghUJpVCNy/UPBePqaIjCkFm07Z8MIU6OJ+eNHWqTY5vLcIXTGM0Qbup5blmi3XR5VxFC1Ro0wyEZ/20Kv7gdhWX1QXDH+2x0Sw7Lncr59VO5wy5IP2cyh1PvsKExcHyVITgEci04LkbFiml/UcbeguUS1OfKS/h9Xgi3jJSRVUXWvXy5zmmt/m2YH5zRpl+EdGhZ24TmnfTv80Ns5Hl9abw1keQEGHg4lQCpZ+eNDPGdIIUD+wNrKet59zO11lq/6znnRD7C+Rw/Lsl1926C5TFnKcnmkyus1sYmrVKiGKYOi1ujHMTXssidjtB2ymwXvCGscloYlr6cqqwZjBU5KHze3xEOUkzdaInhL+H+ZxknCX9CqS7LClRZquuaMII7fcqz0uPD0OUsRD/GWkQj2grSAgV8cvUIGr8zXwzTD834ag0FYe3751YzDKQi/Yqg6TMnr21n5HT2UrrOv+utaW8uROANliy373RdPMHZmifj89YOZcYwTldbqpDPxMZ3rHM7HjetnQdUqqGgDDbG+htZ//uVFM4Tx492fwCtOsZtVGEvT/73WLlE2m0WKeRWK4Onm91YmuEQJeyxwyEiHNfxbkciT1A1l3DmHQ50bSFkdM0VaMqvYsURrvnaFLj7r1WH7QgGdvmHNEHFo="}, {"s": "5yBPBdizZeqHdS78okkmqA==", "i": "pilSpgJj9nCmrZjw", "c": "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"}, {"s": "i2USI46QScr7l4aqZ2gNNQ==", "i": "1Kuqc8uQglm5Fw8g", "c": "vTEu2sVVvCIcep+r+J23nUTe0UOIR9GhpT+2mbEICqqKvXWtSahOy0c0WbqAS8S50B4dA3lHyuK+Tal5rT9C8euUDTG0t6klUziBAq/KfHIsEk+v7O008bZYssCpaLuuPwNkxRSHMrNJ9LAwFDqOn6Nr6JF00EaHUAb8rTA17cttCG9FMoeXtBmLQDSvtJ4Dkx128yXonWLw+XMue44UGFaneYd0XqcxmwpkqsZI2b9vZzipmnE6y6GTWL9yeJlthcc8g2QqsMWEHp2dDiEZIr89P4l9Pu4/RxPWko5pqxhClqHOLTwMwX+iubAyF19crtHVnxpbPRrNVsmgFDMwJcd/77LxtvT/1VLvYcu0m8UdIMHQ4Pfig8GkNRSr9Ry+mg/hAVGsT0IcX3CFsTRxZFkIWG73qFEVx0qCpOywfQCCBUvCuR/vX7qoR2/a8fsQTvaop1CloQVTD/ALXcsSGWLvdSjsheaFhRIhwk04iALorQs6UGxMhDRWdHlNJOGL3eovK5iIdNI3XtWql7+PY+wLV+9SPrpd2s0/FCCkf71Fv2GkZdvKW3TN1ge0S/phpCpvhxsE7uwWuRD8RqZ8PtgPQMwb1789MQ+EFalMY8b34wDqoOgzFWW0DpvNUZx0k/A/Fzu5urtveqnADhXi50t7J9Es/qbcnHmA6pwyDjLGyHALWHahBeHbbTHSYhxDTFzl/Gc44LAsMjAeaPOrOhLEciw9HE3tfBprzJo7UOjKlRed/0jOPMVhEfXWkf8IaKmkaGWsvh+3s8/5S0dIeEuDH4vc3yofwpZzkSxrMi5C17KhLCI6tct6pOSGM5IfWYsf7/Wk1fkF0Lx/g6J1ooHnjB5Lng6fYSfYvytdS0YSIywrc3R3xCC8qUtupGdj7A6z3UzYG+Bab5KsUvnGGh50rp1A3aseDu78aOF9siugy21ZDCq11jdk+DH5fqvK2xpaesrMfZJguyRhRITlWNWzyhhDEA1/9w4ErfNgYR3pEJnGSY4ObAsaJW6/KWj2ZPRzKVD4DLCw2GAA4lpg11a7A5cG0L4S3kj4TcNxgsZckgx9fmeutJ6PsipPq/fGQTgpgAS1P7iYL2OCUQPZRe0Dq+EIiM3oVc1KLxihehmI294+cD9StYogxMUmO7J5EV6/fC2VqVupigBb2tjLkVsErym1bsUbY29NO5+12CNb9/NyiuWzi1xDJdKHVoEJV8zg3nihPi0RTz9mW8llQ2XvBFdyFe2rnA9g6/boH02vSzu+p8H1U3o1TztcKF69q5819WJrYucxNl0TWxmRRzmPwrJFyCjddqKhyXZIgex2t+oV+xW63F/99TmphWOp++EviVH77hf0jD/tsf2P1Apq0sFjaVwiviiIGx95p7C1cuWc36gwiNSe2QE7o575miUZ1m/0iwafeZ1k8SeyzkNhBTnweGmW6X1Z0arx6mhrDb7MH1Q7k7XT+4GN060+QSzwSycHoRGK4fL9NdVEHz7wSLG8GflW4/BXkbqaAQNhYZm5cM3EAZzyH+38y8qlwAEINnbrd8eEbinmklRlW3irht1/Va2wFU1VRzyhdkE5EKlrIKOzlvLdnEa0RsS0kN8ezhnS3cBokn9e3XAXTniZRmNCQxyVQmeMPdMJcDL7aZOTfIxOOqV7yAyEgpvp+DmoZTRf+Ww/+CWD+DR2xkHNNfRk5wTaLYtdKToI43asEjpkgOhxdFy6aKsdbU0iH72AbnuSMaxPuK4qqvi1sHOz3DfOwjsMgS+5BL68jLhAsPA4sLBRvPBAL4k6RXSXkLngvwa4rKKaGjOJjOtT1oAb35BbuMbtaL2poNkOd2T92irEYsVKQmOHu75Tu5deCwr1qZoGYbY3quK5DxsPU02z/Vs+P23LS/f+ntsCeTELQRq85/Jrh8XFyFMSHY7gywy4l3tlkv4w4cWbEEahey0eJzdO6y1o+1USELTH"}], "updatedAt": "2026-10-28T23:26:50.190405+00:00"}</script>
+<script id="pcode">
+"use strict";
+const WD=["日","月","火","水","木","金","土"];
+const CLINIC=[1,2,4,5,6];
+// 祝日（内閣府公表分）。祝日は休診として表示。
+const HOLIDAYS={"2026-01-01":"元日","2026-01-12":"成人の日","2026-02-11":"建国記念の日","2026-02-23":"天皇誕生日","2026-03-20":"春分の日","2026-04-29":"昭和の日","2026-05-03":"憲法記念日","2026-05-04":"みどりの日","2026-05-05":"こどもの日","2026-05-06":"振替休日","2026-07-20":"海の日","2026-08-11":"山の日","2026-09-21":"敬老の日","2026-09-22":"国民の休日","2026-09-23":"秋分の日","2026-10-12":"スポーツの日","2026-11-03":"文化の日","2026-11-23":"勤労感謝の日","2027-01-01":"元日","2027-01-11":"成人の日","2027-02-11":"建国記念の日","2027-02-23":"天皇誕生日"};
+const STAFF={director:{label:"院長",parts:d=>["AM","OP","PM"]},vice:{label:"副院長",parts:d=>[1,4,5,6].includes(d.getDay())?["AM","OP"]:[]}};
+const pad=n=>String(n).padStart(2,"0");
+const toKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fromKey=k=>new Date(+k.slice(0,4),+k.slice(5,7)-1,+k.slice(8,10));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DATA=(()=>{ try{ return JSON.parse(document.getElementById("pdata").textContent); }catch(e){ return {doctors:[],shifts:[]}; } })();
+const docById=Object.fromEntries((DATA.doctors||[]).map(d=>[d.id,d]));
+let byDate={}; let PUB_BY=null, STAFF_BY=null; // 院長・副院長用：非常勤からの見え方（PUB_BY）と全員分（STAFF_BY）を切り替える
+// 応援医（名前を出さない勤務）は灰色の「応援医」で表示
+docById._support={id:"_support",name:"応援医",color:"#8E9690"};
+(DATA.shifts||[]).forEach(([d,s,id])=>{ if(docById[id]) (byDate[d]=byDate[d]||[]).push({s,id}); });
+const absMap={};
+(DATA.absences||[]).forEach(([d,w,p])=>{ if(!["director","vice","viceExtra"].includes(w)) return; const a=absMap[d]=absMap[d]||{director:[],vice:[],viceExtra:[]}; if(!a[w].includes(p)) a[w].push(p); });
+const ls=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k)||""; localStorage.setItem(k,v); }catch(e){ return ""; } };
+const now=new Date();
+const savedOnly=ls("pub_only");
+const st={y:now.getFullYear(),m:now.getMonth(),only:savedOnly,view:ls("pub_view")||"cal",sheet:null,settings:false,secretName:"",codeMsg:"",busy:false};
+if(st.only&&!docById[st.only]) st.only="";
+
+const CLOSED={}; (DATA.closed||[]).forEach(([d,n])=>{ CLOSED[d]=String(n||"休診"); });
+const offName=k=>HOLIDAYS[k]||CLOSED[k]||"";
+const isOpen=d=>CLINIC.includes(d.getDay())&&!offName(toKey(d));
+// 表示名：名字。同じ名字が複数いるときは名前の1文字目を足す（清水裕・清水奈）
+const fam=n=>String(n).split(/[\s　(（]/)[0];
+const famCount={}; (DATA.doctors||[]).forEach(d=>{ const f=fam(d.name); famCount[f]=(famCount[f]||0)+1; });
+const short=n=>{ const f=fam(n); if(famCount[f]>1){ const g=String(n).slice(f.length).replace(/^[\s　]+/,"")[0]; return g&&g!=="("&&g!=="（"?f+g:f; } return f; };
+function slotTime(d,s){ if(s==="AM") return "9:00〜12:00"; if(s==="OP") return "13:30〜16:00"; if(s==="TUE_EVE") return "17:30〜19:00"; return d.getDay()===6?"16:00〜18:00":"16:00〜19:00"; }
+function presence(d,k,part){ if(!isOpen(d)) return []; const a=absMap[k]||{director:[],vice:[],viceExtra:[]};
+  return ["director","vice"].filter(w=>(STAFF[w].parts(d).includes(part)&&!a[w].includes(part))||(w==="vice"&&a.viceExtra.includes(part))); }
+function rowsFor(d,k){
+  const list=byDate[k]||[];
+  const r=[{key:"AM",ab:"午",label:"午前",ids:list.filter(x=>x.s==="AM").map(x=>x.h?x.id+"#h":x.id)},
+           {key:"OP",ab:"処",label:"処置・手術",ids:null},
+           {key:"PM",ab:"夕",label:"夕診",ids:list.filter(x=>x.s==="PM").map(x=>x.h?x.id+"#h":x.id)}];
+  const ev=list.filter(x=>x.s==="TUE_EVE").map(x=>x.h?x.id+"#h":x.id);
+  if(ev.length) r.push({key:"TUE_EVE",ab:"夜",label:"夜診",ids:ev});
+  r.forEach(x=>x.who=presence(d,k,x.key==="TUE_EVE"?"PM":x.key));
+  return r;
+}
+const HIDDEN=new Set();
+const nm=(raw,cls,sfx)=>{ const [id,fl]=String(raw).split("#"); const doc=docById[id]; const hid=fl==="h"||HIDDEN.has(id); return `<span class="nm${cls||""}${hid?" hid":""}${id==="_support"?" sup":""}${st.only&&st.only!==id?" dim":""}" style="background:${esc(doc.color||"#2F6F62")};--c:${esc(doc.color||"#2F6F62")}">${esc(short(doc.name))}${sfx&&id!=="_support"?"先生":""}</span>`; };
+const dots=who=>who.map(w=>`<span class="sd ${w}"></span>`).join("");
+
+function myShifts(){ return st.only?Object.keys(byDate).sort().flatMap(k=>byDate[k].filter(x=>x.id===st.only).map(x=>({k,s:x.s}))):[]; }
+function mineCard(){
+  if(!st.only) return "";
+  const tk=toKey(new Date()), all=myShifts(), mk=`${st.y}-${pad(st.m+1)}`;
+  const nx=all.find(x=>x.k>=tk), cnt=all.filter(x=>x.k.startsWith(mk)).length;
+  const lab={AM:"午前",PM:"夕診",TUE_EVE:"夜診"};
+  const nxt=nx?(()=>{ const d=fromKey(nx.k); return `${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）${lab[nx.s]} ${slotTime(d,nx.s)}`; })():"予定はまだありません";
+  return `<div class="mine-card"><span class="lbl">${esc(short(docById[st.only].name))}先生の次の勤務</span><span class="next">${nxt}</span><span class="sub">${st.m+1}月の勤務 ${cnt}回</span></div>`;
+}
+function renderCal(){
+  const first=new Date(st.y,st.m,1), off=first.getDay(), days=new Date(st.y,st.m+1,0).getDate(), tk=toKey(new Date());
+  let h=WD.map((w,i)=>`<div class="wd ${i===0?"sun":i===6?"sat":""}">${w}</div>`).join("");
+  for(let i=0;i<off;i++) h+=`<div class="cell blank"></div>`;
+  for(let n=1;n<=days;n++){
+    const d=new Date(st.y,st.m,n), k=toKey(d), open=isOpen(d), hol=CLINIC.includes(d.getDay())||HOLIDAYS[k]?offName(k):"", list=byDate[k]||[];
+    const mine=st.only&&list.some(x=>x.id===st.only);
+    const dc=d.getDay()===0||hol?"sun":d.getDay()===6?"sat":"";
+    let inner="";
+    if(open){ const rs=rowsFor(d,k); const band=(r,cls)=>`<div class="band ${cls}"><div class="who-n">${r?(r.ids||[]).map(id=>nm(id)).join(""):""}</div><div class="vdots">${r?dots(r.who):""}</div></div>`;
+      const pm=rs.find(r=>r.key==="PM"), ev=rs.find(r=>r.key==="TUE_EVE");
+      if(ev) pm.ids=pm.ids.concat(ev.ids);
+      inner=`<div class="bands">${band(rs[0],"am")}${band(rs[1],"op")}${band(pm,"pm")}</div>`; }
+    else if(hol) inner=`<div class="hol">${esc(hol)}</div>`;
+    h+=`<button class="cell${open?"":" closed"}${k===tk?" today":""}${k<tk?" past":""}${mine?" mine":""}${st.sheet===k?" sel":""}" data-a="day" data-k="${k}" aria-label="${st.m+1}月${n}日"><span class="dn ${dc}">${n}</span>${inner}</button>`;
+  }
+  return `<div class="legend"><span><span class="sd director"></span>院長</span><span><span class="sd vice"></span>副院長</span><span class="lg-rows">マスの中は上から<b>午前</b>・<b>処置</b>・<b>夕診</b></span></div><div class="grid" id="grid">${h}</div>`;
+}
+// 院長・副院長用：非常勤が入っていない枠（月火木金の夕診・土曜の午前と夕診）。今日以降のみ
+function shortages(){
+  const last=new Date(st.y,st.m+1,0).getDate(), tk=toKey(new Date()), out=[];
+  for(let n=1;n<=last;n++){
+    const d=new Date(st.y,st.m,n), k=toKey(d), w=d.getDay(); if(k<tk||!isOpen(d)) continue;
+    const need=w===6?["AM","PM"]:[1,2,4,5].includes(w)?["PM"]:[]; const list=byDate[k]||[];
+    const miss=need.filter(s=>!list.some(x=>x.s===s)); if(miss.length) out.push({d,k,miss});
+  }
+  return out;
+}
+function shortText(){
+  const L=shortages().map(x=>`${x.d.getMonth()+1}/${x.d.getDate()}（${WD[x.d.getDay()]}）${x.miss.map(s=>s==="AM"?"午前":"夕診").join("・")}`);
+  return `${st.m+1}月 非常勤の先生が未定の枠\n`+(L.length?L.join("\n"):"なし");
+}
+function shortCard(){
+  if(st.role!=="staff"||st.preview||st.only) return "";
+  const s=shortages();
+  return `<div class="short-card"><div class="hd"><div><div class="tt">${st.m+1}月の不足（非常勤なし）</div><div class="sub">月火木金の夕診・土曜の午前と夕診／今日以降</div></div>${s.length?`<button class="today-btn" data-a="copyshort" style="height:34px;flex:none">${st.copied?"コピーしました":"コピー"}</button>`:""}</div>${s.length?`<ul>${s.map(x=>`<li><b>${x.d.getMonth()+1}/${x.d.getDate()}（${WD[x.d.getDay()]}）</b>${x.miss.map(m=>m==="AM"?"午前":"夕診").join("・")}</li>`).join("")}</ul>`:`<div class="ok">不足はありません</div>`}</div>`;
+}
+function renderList(){
+  const last=new Date(st.y,st.m+1,0).getDate(), tk=toKey(new Date()); let h="";
+  for(let n=1;n<=last;n++){
+    const d=new Date(st.y,st.m,n), k=toKey(d); if(!isOpen(d)) continue;
+    const list=byDate[k]||[]; if(st.only&&!list.some(x=>x.id===st.only)) continue;
+    h+=`<button class="day${k===tk?" today":""}${k<tk?" past":""}" data-a="day" data-k="${k}"><div><div class="n">${n}</div><div class="w ${d.getDay()===6?"sat":""}">${WD[d.getDay()]}曜</div></div><div class="rows">${rowsFor(d,k).map(r=>`<div class="row"><span class="k">${r.label.replace("処置・手術","処置")}</span>${r.ids?(r.ids.length?r.ids.map(id=>nm(id,"",1)).join(""):`<span class="none">—</span>`):""}<span class="dots">${dots(r.who)}</span></div>`).join("")}</div></button>`;
+  }
+  return shortCard()+(h||`<div class="empty">${st.only?"この月の勤務はありません":"この月の勤務はまだ登録されていません"}</div>`);
+}
+/* 合言葉：応援医の先生が自分の勤務を見るための鍵。暗号化された勤務をこの端末でだけ開く */
+const tenc=new TextEncoder(), tdec=new TextDecoder();
+const unb64=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0));
+async function openSecret(code){
+  code=String(code||"").replace(/[\s-]/g,"").toUpperCase();
+  if(!code||!(window.crypto&&crypto.subtle)) return null;
+  for(const b of (DATA.secret||[])){
+    try{
+      const base=await crypto.subtle.importKey("raw",tenc.encode(code),"PBKDF2",false,["deriveKey"]);
+      const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:unb64(b.s),iterations:200000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+      const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(b.i)},key,unb64(b.c));
+      return {code,data:JSON.parse(tdec.decode(pt))};
+    }catch(e){}
+  }
+  return null;
+}
+function applySecret(p){
+  const P=p.data; if(st.role) return;
+  if((P.kind||"doctor")==="staff") PUB_BY=JSON.parse(JSON.stringify(byDate));
+  st.role=P.kind||"doctor"; st.roleLabel=P.label||""; st.editUrl=/^https:\/\/claude\.ai\//.test(P.edit||"")?P.edit:"";
+  (P.doctors||[]).forEach(doc=>{ if(docById[doc.id]) return; docById[doc.id]=doc; DATA.doctors=(DATA.doctors||[]).concat([doc]); if(st.role==="staff") HIDDEN.add(doc.id); const f=fam(doc.name); famCount[f]=(famCount[f]||0)+1; });
+  (P.shifts||[]).forEach(([d,s,id])=>{ const L=(byDate[d]=byDate[d]||[]); const i=L.findIndex(x=>x.id==="_support"&&x.s===s); if(i>=0) L.splice(i,1); L.push({s,id,h:st.role==="staff"&&!HIDDEN.has(id)}); });
+  if(st.role==="doctor"&&P.doctors&&P.doctors[0]){ const me=P.doctors[0].id; st.secretName=short(P.doctors[0].name); if(!savedOnly||savedOnly===me) st.only=me; }
+  else if(savedOnly&&docById[savedOnly]) st.only=savedOnly;
+  if(st.role==="staff") STAFF_BY=byDate;
+}
+function roleBanner(){
+  if(st.preview) return "";
+  if(st.role==="staff") return `<div class="role-bn staff">${esc(st.roleLabel||"院長")}用の表示：応援医・非公開の勤務も含めた全員分です。<span class="nm hid" style="--c:var(--ink-soft);padding:0 5px">点線</span>の名前は、ほかの非常勤の先生には見えていません。${st.editUrl?`<div style="margin-top:10px"><a class="today-btn" href="${esc(st.editUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">入力・修正／今すぐ反映（院長アプリ）</a></div>`:""}</div>`;
+  if(st.role==="doctor") return `<div class="role-bn">${esc(st.secretName)}先生の勤務は、ほかの非常勤の先生には表示されていません（応援医の設定）。このスマホにだけ表示しています。</div>`;
+  return "";
+}
+function renderSettings(){
+  if(!st.settings) return "";
+  return `<div class="scrim" data-a="sclose"></div><div class="sheet" role="dialog" aria-label="設定"><div class="grab"></div>
+    <div class="sh-head"><b>設定</b></div>
+    <div class="blk"><div class="t"><b>アクセスコード</b></div>
+    ${st.role?`<div>${st.role==="staff"?esc(st.roleLabel||"院長")+"用の表示（全員分）":esc(st.secretName)+"先生の勤務"}を、このスマホで表示しています。</div><div><button class="today-btn" data-a="forget">アクセスコードを消す</button></div>`
+      :`<div class="sub" style="font-size:13.5px;color:var(--ink-soft)">院長からアクセスコードを受け取った方だけ入力してください。</div>
+      <input id="codeIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="例：ABCD2345" style="font-size:18px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);letter-spacing:.12em">
+      ${st.codeMsg?`<div style="color:var(--sun);font-size:13.5px;font-weight:700">${esc(st.codeMsg)}</div>`:""}
+      <div><button class="today-btn" data-a="code" ${st.busy?"disabled":""}>${st.busy?"確認中…":"登録する"}</button></div>`}
+    </div><button class="closebar" data-a="sclose">閉じる</button></div>`;
+}
+function renderSheet(){
+  const k=st.sheet; if(!k) return "";
+  const d=fromKey(k), title=`${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+  let body;
+  if(!isOpen(d)) body=`<div class="blk"><span class="none">${offName(k)&&offName(k)!=="休診"?esc(offName(k))+"のため":""}休診日です</span></div>`;
+  else body=rowsFor(d,k).map(r=>`<div class="blk"><div class="t"><b>${r.label}</b><span>${slotTime(d,r.key)}</span></div>
+    ${r.ids?`<div class="ppl">${r.ids.length?r.ids.map(id=>nm(id,"",1)).join(""):`<span class="none">非常勤の先生はいません</span>`}</div>`:""}
+    <div class="ppl">${r.who.map(w=>`<span class="tag ${w}"><span class="sd ${w}"></span>${STAFF[w].label}</span>`).join("")||`<span class="none">院長・副院長はいません</span>`}</div></div>`).join("");
+  return `<div class="scrim" data-a="close"></div><div class="sheet" role="dialog" aria-label="${title}"><div class="grab"></div>
+    <div class="sh-head"><b>${title}</b><div class="sh-nav"><button data-a="sprev" aria-label="前の日">‹</button><button data-a="snext" aria-label="次の日">›</button></div></div>
+    ${body}<button class="closebar" data-a="close">閉じる</button></div>`;
+}
+function render(){
+  const mk=`${st.y}-${pad(st.m+1)}`;
+  const inMonth=new Set(Object.keys(byDate).filter(k=>k.startsWith(mk)).flatMap(k=>byDate[k].map(x=>x.id)));
+  const chips=(DATA.doctors||[]).filter(d=>inMonth.has(d.id)||d.id===st.only);
+  const up=DATA.updatedAt?new Date(DATA.updatedAt):null;
+  const isThis=st.y===now.getFullYear()&&st.m===now.getMonth();
+  document.getElementById("root").innerHTML=`<header><div class="wrap">
+    <div class="r1"><div><h1>非常勤 勤務表<span class="keisho">敬称略</span></h1>${up?`<div class="upd">更新 ${up.getMonth()+1}/${up.getDate()} ${pad(up.getHours())}:${pad(up.getMinutes())}</div>`:""}</div>
+      <div style="display:flex;gap:6px;align-items:center"><div class="seg"><button data-a="view" data-v="cal" aria-pressed="${st.view==="cal"}">カレンダー</button><button data-a="view" data-v="list" aria-pressed="${st.view==="list"}">リスト</button></div><button class="mbtn" data-a="settings" aria-label="設定" style="width:40px;height:34px;font-size:17px">⋯</button></div></div>
+    <div class="r2"><button class="mbtn" data-a="prev" aria-label="前の月">‹</button><div class="mtitle">${st.y}年${st.m+1}月</div><button class="mbtn" data-a="next" aria-label="次の月">›</button><button class="today-btn" data-a="today"${isThis?' style="visibility:hidden" tabindex="-1" aria-hidden="true"':""}>今月</button></div>
+    ${st.role==="staff"&&PUB_BY?`<div class="staffbar"><div class="seg"><button data-a="preview" data-v="0" aria-pressed="${!st.preview}">${esc(st.roleLabel||"院長")}の表示</button><button data-a="preview" data-v="1" aria-pressed="${!!st.preview}">非常勤からの見え方</button></div>${st.editUrl&&!st.preview?`<a class="today-btn" href="${esc(st.editUrl)}" target="_blank" rel="noopener">時給・入力</a>`:""}</div>`:""}
+    <div class="chips"><button class="who" data-a="only" data-id="" aria-pressed="${!st.only}">全員</button>${chips.map(d=>`<button class="who" data-a="only" data-id="${esc(d.id)}" aria-pressed="${st.only===d.id}"><span class="dot" style="background:${esc(d.color)}"></span>${esc(short(d.name))}先生</button>`).join("")}</div>
+  </div></header>
+  <main class="wrap">${mineCard()}${st.view==="cal"?renderCal():renderList()}
+    ${roleBanner()}<div class="foot">休診：水・日・祝　日付をタップすると詳しく見られます<br>勤務の変更・交代の相談は院長まで</div></main>${renderSheet()}${renderSettings()}`;
+}
+function move(dm){ st.m+=dm; if(st.m<0){st.m=11;st.y--;} if(st.m>11){st.m=0;st.y++;} render(); }
+function moveDay(dd){ const d=fromKey(st.sheet); d.setDate(d.getDate()+dd); st.sheet=toKey(d); if(d.getMonth()!==st.m||d.getFullYear()!==st.y){ st.y=d.getFullYear(); st.m=d.getMonth(); } render(); }
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-a]"); if(!el) return; const a=el.dataset.a;
+  if(a==="prev") move(-1); else if(a==="next") move(1);
+  else if(a==="today"){ st.y=now.getFullYear(); st.m=now.getMonth(); render(); }
+  else if(a==="only"){ st.only=el.dataset.id; ls("pub_only",st.only); render(); }
+  else if(a==="view"){ st.view=el.dataset.v; ls("pub_view",st.view); render(); }
+  else if(a==="day"){ st.sheet=el.dataset.k; render(); }
+  else if(a==="close"){ st.sheet=null; render(); }
+  else if(a==="sprev") moveDay(-1); else if(a==="snext") moveDay(1);
+  else if(a==="settings"){ st.settings=true; st.codeMsg=""; render(); }
+  else if(a==="sclose"){ st.settings=false; render(); }
+  else if(a==="copyshort"){ const t=shortText(); const done=()=>{ st.copied=true; render(); setTimeout(()=>{ st.copied=false; render(); },2000); };
+    const fb=()=>{ const ta=document.createElement("textarea"); ta.value=t; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length); try{ document.execCommand("copy"); }catch(e){} ta.remove(); done(); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,fb); else fb(); }
+  else if(a==="preview"){ const v=el.dataset.v==="1"; if(v!==!!st.preview&&PUB_BY&&STAFF_BY){ st.preview=v; byDate=v?PUB_BY:STAFF_BY; st.only=""; st.sheet=null; render(); } }
+  else if(a==="forget"){ ls("pub_code",""); location.reload(); }
+  else if(a==="code"){ const v=(document.getElementById("codeIn")||{}).value||""; st.busy=true; render();
+    openSecret(v).then(p=>{ st.busy=false; if(p){ ls("pub_code",p.code); applySecret(p); st.settings=false; } else st.codeMsg="アクセスコードが違います。もう一度確かめてください。"; render(); }); }
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&st.sheet){ st.sheet=null; render(); } });
+// 左右スワイプで月を切り替え（シートが開いていないとき）
+let sx=null,sy=null;
+document.addEventListener("touchstart",e=>{ if(st.sheet||!e.target.closest("#grid,.day,main")) return; sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+document.addEventListener("touchend",e=>{ if(sx===null) return; const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy; sx=null;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5) move(dx<0?1:-1); },{passive:true});
+render();
+{ const sc=ls("pub_code"); if(sc) openSecret(sc).then(p=>{ if(p){ applySecret(p); render(); } }); }
+// 新しい版があれば読み込み直す（iPhoneが古いページを覚えている対策）
+(()=>{ const mine=(DATA.updatedAt||"")+"|"+((document.querySelector('meta[name="build"]')||{}).content||"");
+  let busy=false;
+  const check=()=>{ if(busy||!navigator.onLine) return; busy=true;
+    fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+      if(!t) return; const u=(t.match(/"updatedAt":\s*"([^"]*)"/)||[])[1]||""; const bd=(t.match(/<meta name="build" content="([^"]*)"/)||[])[1]||"";
+      const theirs=u+"|"+bd; if(theirs===mine){ try{ sessionStorage.removeItem("reloads"); }catch(e){} return; }
+      let n=0; try{ n=+sessionStorage.getItem("reloads")||0; }catch(e){} if(n>=2) return;
+      try{ sessionStorage.setItem("reloads",String(n+1)); }catch(e){}
+      location.replace(location.pathname+"?r="+Date.now());
+    }).catch(()=>{}).finally(()=>{ busy=false; }); };
+  check(); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") check(); });
+})();
+</script>
+</body>
+</html>
