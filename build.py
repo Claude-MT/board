@@ -93,7 +93,7 @@ def build(db):
             secret.append(encrypt(code, blob, "staff-" + key))
 
     return {"app": "doctor-shift-public", "doctors": doctors,
-            "shifts": sorted([[s["date"], s["slot"], s["doctorId"]] for s in pub] +
+            "shifts": sorted([[s["date"], s["slot"], s["doctorId"]] + ([s["startTime"]] if s.get("startTime") else []) for s in pub] +
                              [[s["date"], s["slot"], "_support"] for s in shifts if s not in pub],  # 応援医・非公開は名前なし
                              key=lambda x: (x[0], SLOT_ORDER[x[1]])),
             "absences": absences, "closed": closed, "secret": secret}
