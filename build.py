@@ -40,6 +40,20 @@ def encrypt(code, obj, doc_id):
     return {"s": b64(salt), "i": b64(iv), "c": b64(AESGCM(key).encrypt(iv, pt, None))}
 
 
+def timespan(s):
+    """途中から・途中までの勤務の時間帯。開始と時間があれば「9:00〜11:00」、開始だけなら「17:15」。"""
+    st = str(s.get("startTime") or "")
+    try:
+        h, m = map(int, st.split(":"))
+        hrs = float(s.get("hours") or 0)
+        if hrs > 0:
+            end = h * 60 + m + round(hrs * 60)
+            return f"{h}:{m:02d}〜{end // 60}:{end % 60:02d}"
+    except ValueError:
+        pass
+    return st
+
+
 def build(db):
     jst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).date()
     first = jst.replace(day=1)
@@ -93,7 +107,7 @@ def build(db):
             secret.append(encrypt(code, blob, "staff-" + key))
 
     return {"app": "doctor-shift-public", "doctors": doctors,
-            "shifts": sorted([[s["date"], s["slot"], s["doctorId"]] + ([s["startTime"]] if s.get("startTime") else []) for s in pub] +
+            "shifts": sorted([[s["date"], s["slot"], s["doctorId"]] + ([timespan(s)] if s.get("startTime") else []) for s in pub] +
                              [[s["date"], s["slot"], "_support"] for s in shifts if s not in pub],  # 応援医・非公開は名前なし
                              key=lambda x: (x[0], SLOT_ORDER[x[1]])),
             "absences": absences, "closed": closed, "secret": secret}
