@@ -5,7 +5,7 @@
 DBの書き出しフォルダには doctors/ shifts/ absences/ closures/ の JSON（1件1ファイル）を置く。
 時給・帰った時間・超過などは読み込まない（公開ページに入れない）。
 応援医（publicHidden）の勤務は本人のアクセスコード（doctors.secretCode）で、
-院長・副院長用の全員分は meta/codes の director・vice のコードで、それぞれ暗号化して入れる。
+院長・副院長・スタッフ用の全員分（＋変更ログ）は meta/codes の director・vice・staff のコードで、それぞれ暗号化して入れる。
 """
 import base64, datetime, glob, hashlib, json, os, re, sys
 
@@ -54,8 +54,58 @@ def timespan(s):
     return st
 
 
-def build(db):
-    jst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).date()
+def decrypt(code, blob):
+    pt = None
+    try:
+        salt = base64.b64decode(blob["s"])
+        key = hashlib.pbkdf2_hmac("sha256", code.encode(), salt, ITER, 32)
+        pt = AESGCM(key).decrypt(base64.b64decode(blob["i"]), base64.b64decode(blob["c"]), None)
+    except Exception:
+        return None
+    return json.loads(pt)
+
+
+def old_state(old, meta):
+    """前回の勤務表から（日付, 枠, 医師ID）の全件と変更ログを復元する。院長用の鍵の中身を院長コードで開く。"""
+    code = str(meta.get("director") or "").strip().upper()
+    if not code or not old:
+        return None, None
+    want = b64(hashlib.sha256(("salt|staff-director|" + code).encode()).digest()[:16])
+    for b in old.get("secret") or []:
+        if b.get("s") == want:
+            P = decrypt(code, b)
+            if P is None:
+                return None, None
+            full = {(x[0], x[1], x[2]) for x in old.get("shifts") or [] if x[2] != "_support"}
+            full |= {(x[0], x[1], x[2]) for x in P.get("shifts") or []}
+            return full, P.get("log")
+    return None, None
+
+
+def changelog(old_full, old_log, shifts, docs, today, now_jst):
+    """前回と今回を比べて「追加・交代・取消」をログに足す（今日以降の勤務だけ）。"""
+    log = list(old_log or [])
+    if old_full is not None:
+        new_full = {(s["date"], s["slot"], s["doctorId"]) for s in shifts}
+        t = today.isoformat()
+        gone = sorted(x for x in old_full - new_full if x[0] >= t)
+        came = sorted(x for x in new_full - old_full if x[0] >= t)
+        name = lambda i: (docs.get(i) or {}).get("name", "?")
+        at = now_jst.strftime("%Y-%m-%dT%H:%M")
+        for key in sorted({(x[0], x[1]) for x in gone + came}, key=lambda k: (k[0], SLOT_ORDER[k[1]])):
+            r = [x[2] for x in gone if (x[0], x[1]) == key]
+            a = [x[2] for x in came if (x[0], x[1]) == key]
+            while r and a:
+                log.append({"at": at, "d": key[0], "s": key[1], "t": "chg", "a": name(a.pop(0)), "b": name(r.pop(0))})
+            log += [{"at": at, "d": key[0], "s": key[1], "t": "add", "a": name(i)} for i in a]
+            log += [{"at": at, "d": key[0], "s": key[1], "t": "del", "b": name(i)} for i in r]
+    keep = (now_jst - datetime.timedelta(days=45)).strftime("%Y-%m-%dT%H:%M")
+    return [e for e in log if e.get("at", "") >= keep][-120:]
+
+
+def build(db, old=None, seed=None):
+    now_jst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    jst = now_jst.date()
     first = jst.replace(day=1)
     base = (first - datetime.timedelta(days=1)).replace(day=1).isoformat()  # 前の月の1日
 
@@ -94,14 +144,19 @@ def build(db):
     # 院長・副院長：非常勤に隠している勤務（応援医＋日ごとの非公開）をすべて
     meta = {}
     for m in load(db, "meta"):
-        if m.get("id") == "codes" or "director" in m or "vice" in m:
+        if m.get("id") == "codes" or "director" in m or "vice" in m or "staff" in m:
             meta.update(m)
+    old_full, old_log = old_state(old, meta)
+    if old_log is None and seed is not None:
+        old_log = seed
+    log = changelog(old_full, old_log, shifts, docs, jst, now_jst)
     staff_shifts = [[s["date"], s["slot"], s["doctorId"]] for s in shifts
                     if hidden(docs[s["doctorId"]]) or s.get("hidden")]
-    for key, label in (("director", "院長"), ("vice", "副院長")):
+    for key, label in (("director", "院長"), ("vice", "副院長"), ("staff", "スタッフ")):
         code = str(meta.get(key) or "").strip().upper()
         if code:
-            blob = {"kind": "staff", "label": label, "doctors": [pubd(d) for d in hid_docs], "shifts": staff_shifts}
+            blob = {"kind": "staff", "label": label, "doctors": [pubd(d) for d in hid_docs], "shifts": staff_shifts,
+                    "log": log, "short": key != "staff"}  # 不足一覧は院長・副院長だけ
             if key == "director":  # 院長だけ、時給・入力用の院長アプリへのボタンを出す（院長のログインが必要なページ）
                 blob["edit"] = EDIT_URL
             secret.append(encrypt(code, blob, "staff-" + key))
@@ -117,8 +172,13 @@ PDATA = re.compile(r'(<script type="application/json" id="pdata">)(.*?)(</script
 
 
 def main():
-    db, files = sys.argv[1], sys.argv[2:]
-    new = build(db)
+    args = sys.argv[1:]
+    seed = None
+    if "--seed" in args:  # 初回だけ：変更ログの初期値（JSON）
+        i = args.index("--seed"); seed = json.load(open(args[i + 1], encoding="utf-8")); del args[i:i + 2]
+    db, files = args[0], args[1:]
+    m0 = PDATA.search(open(files[0], encoding="utf-8").read())
+    new = build(db, json.loads(m0.group(2)) if m0 else None, seed)
     for path in files:
         html = open(path, encoding="utf-8").read()
         m = PDATA.search(html)
